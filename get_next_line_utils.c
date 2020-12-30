@@ -10,9 +10,9 @@ void        gnl_append_buff(t_head **head, char *str, ssize_t size)
         return ;
     }
     new->next = NULL;
-    ft_strlcpy(new->string, str, size);
+    new->string = gnl_strdup(str, size);
     new->size = size;
-    if (!(*head)->head)
+    if (!(*head)->overall_size)
     {
         (*head)->head = new;
         (*head)->tail = new;
@@ -24,53 +24,56 @@ void        gnl_append_buff(t_head **head, char *str, ssize_t size)
         (*head)->tail = new;
         (*head)->overall_size += size;
     }
-    printf("Added list str<%s> size<%zu> overall_size<%zu>\n\n",(*head)->tail->string, (*head)->tail->size,\
-            (*head)->overall_size);
+    //printf("Added list str<%s> size<%zu> overall_size<%zu>\n\n",(*head)->tail->string, (*head)->tail->size,(*head)->overall_size);
 }
-
 
 char        *gnl_concat(t_head **head)
 {
-    size_t  all_size;
+    int     all_size;
     t_gnl   *list;
-    char    *line;
+    char    *str;
+    int     i;
+	int		k;
 
-    all_size = (*head)->overall_size;
-    if (all_size ==  0 || !head || !(*head)->head 
-            || !(line = malloc(sizeof(*line)* (1 + all_size))) || !(*head)->head->string)
-    {
-        gnl_exit(&line, NULL, head, NULL);
-        return (NULL);
-    }
+    all_size = (*head)->overall_size + 1;
+    if (!(str = malloc(sizeof(*str) * all_size)))
+        return (NULL);//FIXME free **head memory
     list = (*head)->head;
-    while (list)
-    {
-        ft_strlcat(line, list->string, list->size);
-        list = list->next;
+	k = 0;
+    while (list && all_size)
+    {   
+        i = 0;
+        while (i < list->size)
+        {
+           str[k++] = (list->string)[i++];
+           all_size--;
+        }
+        list = list->next;    
     }
-    gnl_exit(NULL, NULL, head, NULL);
-    return (line);
+    str[(*head)->overall_size] = '\0';
+    return (str);
 }
-
-int        gnl_exit(char **line, char *buffer, t_head **head, static char *remainder)
+int   gnl_clear(t_head *head, t_rem *remainder)
 {
+    t_gnl   *tmp;
     t_gnl   *list;
-    
-    if (buffer)
-        buffer = NULL;
+
     if (remainder)
-        remainder = NULL;
-    if (head && (*head)->head)
-        list = (*head)->head;
-    if (line && *line && **line)
-        free(*line);
-    while (list)
+        free(remainder->string);
+    if (head && head->head)
     {
-        (*head)->head = (*head)->head->next;
-        free(list);
-        list = (*head)->head;
+		printf("\t\t\t\t\nxxxCLEAN LISTxxx\n");
+        list = head->head;
+        while (list)
+        {
+            tmp = list;
+            list = list->next;
+            free(tmp->string);
+            free(tmp);
+        }
     }
-    if (head && *head)
-        free(*head);
+    if (head)
+        free(head);
     return (-1);
 }
+

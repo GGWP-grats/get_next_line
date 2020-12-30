@@ -1,14 +1,16 @@
 NAME = gnl
 SRC = get_next_line.c get_next_line_utils.c main.c
 OBJ = $(SRC:.c=.o)
-CCW = gcc -Wall -Wextra -Werror -g
-LIB = libft/libft.a
+CCW = gcc -Wall -Wextra -Werror -g 
 
 all: $(NAME)
 
 $(NAME): $(LIB) $(OBJ)
-	$(CCW) $(OBJ) $(LIB) -o gnl
-	
+	$(CCW) $(OBJ) -o gnl
+
+f: $(LIB) $(OBJ)
+	$(CCW) -fsanitize=address -fstack-protector $(OBJ) -o gnl
+
 
 $(LIB):
 	make -C libft/
@@ -17,11 +19,9 @@ $(LIB):
 %.o: %.c
 	$(CCW) -c $< -o $@
 clean:
-	@make clean -C libft/ 
 	@rm -rf *.o
 
 fclean: clean
-	@make fclean -C libft/
 	@rm -rf $(NAME)
 
 re: fclean all
