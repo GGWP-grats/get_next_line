@@ -6,7 +6,7 @@
 /*   By: wquenten <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/11/24 17:47:24 by wquenten          #+#    #+#             */
-/*   Updated: 2020/11/24 19:25:53 by wquenten         ###   ########.fr       */
+/*   Updated: 2020/12/31 05:00:42 by wquenten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,8 +67,8 @@ int                 read_line(int fd, char **line, t_rem *rm, t_head **lst_head)
     ssize_t         size;
     
 	endl = -1;
-	while (endl == -1 && (buff = malloc(sizeof(*buff) * BUFFER_SIZE)) 
-		&& (size = read(fd, buff, BUFFER_SIZE)) > 0)  
+	while ((buff = malloc(sizeof(*buff) * BUFFER_SIZE))
+		&& (size = read(fd, buff, BUFFER_SIZE)) > 0 && endl == -1)  
 	{	
 		//printf("READ %zu <%s>\n", size, buff);
 		if ((endl = find_endl(buff, size)) > 0)
@@ -76,17 +76,18 @@ int                 read_line(int fd, char **line, t_rem *rm, t_head **lst_head)
         else if (endl == -1)
             gnl_append_buff(lst_head, buff, size);
 	}
-	if (size == BUFFER_SIZE)
+//printf("LAST SIZE %zu\n", size);
+	if (size == BUFFER_SIZE || (endl > 0 && (size - endl) > 0))
 		ret = 1;
-	else if (size < BUFFER_SIZE)
+	else if (size < BUFFER_SIZE || size == 0)
 		ret = 0;
-	if ((*line = gnl_concat(lst_head)) == NULL || size < 0)
-		return (gnl_clear(*lst_head, rm));
-	if (*line != NULL && endl > 0 && (size - endl) > 0 
+	if ((*line = gnl_concat(lst_head)) == NULL || size < 0 || !buff)
+		return (gnl_clear(*lst_head, rm, buff));
+	if (endl > 0 && (size - endl) > 0 
 			&& (rm->string = gnl_strdup(&buff[size - endl], size - endl)))
 		rm->size = size - endl;
 	if (*line)
-		gnl_clear(*lst_head, NULL);
+		gnl_clear(*lst_head, NULL, NULL);
 	return (ret);
 }
 
@@ -109,7 +110,7 @@ int                 get_next_line(int fd, char **line)
            *line = gnl_strdup(remainder.string, endl);
            remainder.size -= endl + 1;
            tmp = gnl_strdup(remainder.string + endl + 1, remainder.size);
-           gnl_clear(lst_head, &remainder);  
+           gnl_clear(lst_head, &remainder, NULL);  
            remainder.string = tmp;
            return (1);
        }

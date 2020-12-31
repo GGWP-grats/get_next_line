@@ -4,13 +4,10 @@ void        gnl_append_buff(t_head **head, char *str, ssize_t size)
 {
     t_gnl   *new;
     
-    if (!(new = malloc(sizeof(*new))))
-    {   
-        printf("ERROR when trying allocate new list\n");
-        return ;
-    }
-    new->next = NULL;
-    new->string = gnl_strdup(str, size);
+    if (!(new = malloc(sizeof(*new))) && gnl_clear(*head, NULL, str)) 
+		return ; 
+	new->next = NULL;
+    new->string = str;
     new->size = size;
     if (!(*head)->overall_size)
     {
@@ -24,7 +21,7 @@ void        gnl_append_buff(t_head **head, char *str, ssize_t size)
         (*head)->tail = new;
         (*head)->overall_size += size;
     }
-    //printf("Added list str<%s> size<%zu> overall_size<%zu>\n\n",(*head)->tail->string, (*head)->tail->size,(*head)->overall_size);
+    printf("Added list str<%s> size<%zu> overall_size<%zu>\n\n",(*head)->tail->string, (*head)->tail->size,(*head)->overall_size);
 }
 
 char        *gnl_concat(t_head **head)
@@ -53,16 +50,18 @@ char        *gnl_concat(t_head **head)
     str[(*head)->overall_size] = '\0';
     return (str);
 }
-int   gnl_clear(t_head *head, t_rem *remainder)
+int   gnl_clear(t_head *head, t_rem *remainder, char *buff)
 {
     t_gnl   *tmp;
     t_gnl   *list;
-
+	
+	if (buff)
+		free(buff);
     if (remainder)
         free(remainder->string);
     if (head && head->head)
     {
-		printf("\t\t\t\t\nxxxCLEAN LISTxxx\n");
+		//printf("\t\t\t\t\nxxxCLEAN LISTxxx\n");
         list = head->head;
         while (list)
         {
