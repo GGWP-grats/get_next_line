@@ -47,11 +47,11 @@ typedef struct      s_head
 
 int 			    get_next_line(int fd, char **line);
 int                 read_line(int fd, char **line, t_rem *rm, t_head **lst_head);
-void                gnl_append_buff(t_head **head, char *str, ssize_t size);
+void 				*gnl_append_buff(t_head **head, char *str, ssize_t size);
 char                *gnl_concat(t_head **head);
 size_t              ft_strlcat(char *dst, const char *src, size_t dstsize);
-char                *gnl_strdup(char *str, ssize_t size);
+char                *gnl_strdup(char *str, ssize_t size, char *func);
 int                 find_endl(char *str, ssize_t size);
-int                 gnl_clear(t_head *head, t_rem *remainder);
+int                 gnl_clear(t_head *head, t_rem *remainder, char *buf);
     
 #endif 

@@ -6,7 +6,7 @@
 /*   By: wquenten <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/11/24 17:47:24 by wquenten          #+#    #+#             */
-/*   Updated: 2020/12/31 05:00:42 by wquenten         ###   ########.fr       */
+/*   Updated: 2020/11/24 19:25:53 by wquenten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,20 +24,16 @@ int                 find_endl(char *str, ssize_t size)
 	return (-1);  
 }
 
-/*
- * This function cuts all \n in start of string and resize variable size
- * if \n cutted;
- * Then its allocates memory in heap and copy str in allocated memory
- * Returns new string;
-*/
-char                *gnl_strdup(char *str, ssize_t size)
+char                *gnl_strdup(char *str, ssize_t size, char *func)
 {
     char            *new_str;
     int             i;
 
-    i = - 1;
-	if (size == 1 && *str == '\n')
-		size--;
+    i = -1;
+	//if (size == 1 && *str == '\n')
+//		size--;
+	//printf("\n(%s)ALLOC %zu FOR |%.*s|\n", func, size, (int)size, str);
+	(void)*func;
     if (!str || size < 0 || !(new_str = malloc(sizeof(*new_str) * (size + 1))))
         return (NULL);
     while (++i <= size)
@@ -46,49 +42,33 @@ char                *gnl_strdup(char *str, ssize_t size)
     return (new_str);
 }
 
-/*
- * This is main funcution thats read in buff[BUFFER_SIZE]
- * the file stream fd. It's saves all read of stream in
- * linked list t_gnl via t_head saving read size. After endl 
- * occurience in file, adding all read buff before endl
- * and concatenate all list elem in **line;
- * If somethig read after \n copy all after it in 
- * t_rem static structure and assign its size
- * return:
- *  1 file not fully read
- *  0 met EOF
- * -1 error occured
-*/
 int                 read_line(int fd, char **line, t_rem *rm, t_head **lst_head)
 {
-    int             endl;
-    char            *buff;
-    int             ret;
-    ssize_t         size;
-    
+	char			*buf;
+	ssize_t 		size;
+	ssize_t			endl;
+	
 	endl = -1;
-	while ((buff = malloc(sizeof(*buff) * BUFFER_SIZE))
-		&& (size = read(fd, buff, BUFFER_SIZE)) > 0 && endl == -1)  
-	{	
-		//printf("READ %zu <%s>\n", size, buff);
-		if ((endl = find_endl(buff, size)) > 0)
-            gnl_append_buff(lst_head, buff, endl);
-        else if (endl == -1)
-            gnl_append_buff(lst_head, buff, size);
-	}
-//printf("LAST SIZE %zu\n", size);
-	if (size == BUFFER_SIZE || (endl > 0 && (size - endl) > 0))
-		ret = 1;
-	else if (size < BUFFER_SIZE || size == 0)
-		ret = 0;
-	if ((*line = gnl_concat(lst_head)) == NULL || size < 0 || !buff)
-		return (gnl_clear(*lst_head, rm, buff));
-	if (endl > 0 && (size - endl) > 0 
-			&& (rm->string = gnl_strdup(&buff[size - endl], size - endl)))
-		rm->size = size - endl;
-	if (*line)
-		gnl_clear(*lst_head, NULL, NULL);
-	return (ret);
+	size = 0;
+	while (endl == -1 && (buf = malloc(sizeof(*buf) * BUFFER_SIZE + 1)) &&
+		  (size = read(fd, buf, BUFFER_SIZE)) > 0)
+		if ((endl = find_endl(buf, size)) > -1)
+			gnl_append_buff(lst_head, buf, endl);
+		else if (endl == -1)
+			gnl_append_buff(lst_head, buf, size);
+	if (size <= 0)
+		free(buf);	
+	if (size > 0 && endl > -1 && ++endl < size && (rm->size = size - endl))
+		if (!(rm->string = gnl_strdup(&buf[endl], size - endl, "create rm")))
+			size = -1;
+	if ((*lst_head)->overall_size > 0 && (size = 1))
+		if (!(*line = gnl_concat(lst_head)))
+			size = -1;
+	if (size <= 0)
+		if(!(*line = gnl_strdup("", 0, "zero lenght")))
+			size = -1;
+	gnl_clear(*lst_head, NULL, NULL);
+	return (size);
 }
 
 int                 get_next_line(int fd, char **line)
@@ -102,20 +82,21 @@ int                 get_next_line(int fd, char **line)
             !(lst_head = malloc(sizeof(*lst_head))))
         return (-1);
     *lst_head = (t_head){NULL, NULL, 0};
-    if (remainder.string)
+    if (remainder.string && remainder.size > 0)
     {
-//       printf("We have remainder <%s>\n", remainder.string);
-       if ((endl = find_endl(remainder.string, remainder.size)) > 0)
+       //printf("We have remainder <%s> size %zu\n", remainder.string, remainder.size);
+       if ((endl = find_endl(remainder.string, remainder.size)) > -1)
        {
-           *line = gnl_strdup(remainder.string, endl);
-           remainder.size -= endl + 1;
-           tmp = gnl_strdup(remainder.string + endl + 1, remainder.size);
-           gnl_clear(lst_head, &remainder, NULL);  
+           if (!(*line = gnl_strdup(remainder.string, endl, "gnl")) && gnl_clear(lst_head, &remainder, NULL))
+			   return (-1);
+		   if (remainder.size -= endl + 1)
+			   tmp = gnl_strdup(remainder.string + endl + 1, remainder.size, "recreate rm");
+           gnl_clear(lst_head, &remainder, NULL); 
            remainder.string = tmp;
            return (1);
        }
-       else if (endl >= 0)
-           gnl_append_buff(&lst_head, remainder.string,remainder.size);
+       else if (!(gnl_append_buff(&lst_head, remainder.string, remainder.size)) || (remainder.string = NULL))
+		   return (gnl_clear(lst_head, &remainder, NULL));
     }
     return (read_line(fd, line, &remainder, &lst_head));
 }
