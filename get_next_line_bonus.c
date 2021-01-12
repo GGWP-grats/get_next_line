@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: wquenten <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2020/11/24 17:47:24 by wquenten          #+#    #+#             */
-/*   Updated: 2021/01/13 02:42:58 by wquenten         ###   ########.fr       */
+/*   Created: 2021/01/13 02:34:52 by wquenten          #+#    #+#             */
+/*   Updated: 2021/01/13 02:47:01 by wquenten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ int					read_line(int fd, char **line, t_rem *rm, t_head **lst_head)
 
 int					get_next_line(int fd, char **line)
 {
-	static t_rem	remainder = {NULL, 0};
+	static t_rem	remainder[OPEN_MAX];
 	t_head			*lst_head;
 	ssize_t			endl;
 
@@ -91,12 +91,12 @@ int					get_next_line(int fd, char **line)
 			!(lst_head = malloc(sizeof(*lst_head))))
 		return (-1);
 	*lst_head = (t_head){NULL, NULL, 0};
-	if (remainder.string && remainder.size > 0 &&
-		(endl = find_endl(remainder.string, remainder.size)) > -1)
-		return (rebuild_remainder(&remainder, endl, line, lst_head));
-	else if (remainder.string &&
-			(!(gnl_append_buff(&lst_head, remainder.string, remainder.size))
-				|| (remainder.string = NULL)))
-		return (gnl_clear(lst_head, &remainder, line, 0));
-	return (read_line(fd, line, &remainder, &lst_head));
+	if (remainder[fd].string && remainder[fd].size > 0 &&
+		(endl = find_endl(remainder[fd].string, remainder[fd].size)) > -1)
+		return (rebuild_remainder(&remainder[fd], endl, line, lst_head));
+	else if (remainder[fd].string &&
+			(!(gnl_append_buff(&lst_head, remainder[fd].string,
+			remainder[fd].size)) || (remainder[fd].string = NULL)))
+		return (gnl_clear(lst_head, &remainder[fd], line, 0));
+	return (read_line(fd, line, &remainder[fd], &lst_head));
 }
