@@ -1,6 +1,8 @@
 NAME = gnl
 SRC = get_next_line.c get_next_line_utils.c main.c
+BSRC = get_next_line_bonus.c get_next_line_utils_bonus.c get_next_line_bonus.h main.c
 OBJ = $(SRC:.c=.o)
+BOBJ = $(BSRC:.c=.o)
 CCW = gcc -Wall -Wextra -Werror -g 
 BUFFER_SIZE = -D BUFFER_SIZE=$(BUF)
 all: $(NAME)
@@ -11,10 +13,8 @@ $(NAME): $(LIB) $(OBJ)
 f: $(LIB) $(OBJ)
 	$(CCW) -fsanitize=address -fstack-protector $(OBJ) -o gnl
 
-
-$(LIB):
-	make -C libft/
-	make bonus -C libft/
+b: $(BOBJ)
+	$(CCW) -fsanitize=address -fstack-protector $(BOBJ)
 
 %.o: %.c
 	$(CCW) $(BUFFER_SIZE) -c $< -o $@
@@ -27,4 +27,4 @@ fclean: clean
 re: fclean all
 
 ref: fclean f
-.PHONY: re clean clean libft.a $(NAME) all
+.PHONY: b re clean clean libft.a $(NAME) all
