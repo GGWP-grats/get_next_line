@@ -21,6 +21,10 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <fcntl.h>
+# include <stdio.h>
+# ifndef OPEN_MAX
+#  define OPEN_MAX FOPEN_MAX
+# endif
 
 typedef struct		s_rem
 {
